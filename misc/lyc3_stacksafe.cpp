@@ -72,7 +72,7 @@ int factor() { // 处理数字、括号和单目运算符。
     exit(1); // 出错
 }
 
-const char* level_op[] = {"<>", "+-", "*/%"};
+const char* level_op[] = {"<>", "+-", "*/%", "+-~"};
 struct Node {
     int level, res;
     bool init, waiting;
@@ -82,20 +82,41 @@ struct Node {
     const char* type() const { return level_op[level]; }
 };
 
+Node v[1919810]; // 不能用vector， vector还是用的堆空间，会爆。
+int idx = 0;
+
 int expression() {
-    vector<Node> v; // 模拟栈
-    v.push_back(Node{0});
+    v[++idx] = Node{0};
 
     int res;
-    while (!v.empty()) {
-        auto &r = *v.rbegin();
-        if (r.level == 3) {
-            res = factor();
-            v.pop_back();
+    while (idx) {
+        auto &r = v[idx];
+        if (r.level == 3) { // factor()
+            if (!r.init) {
+                r.init = true;
+                if (isdigit(peek())) {
+                    res = get() - '0';
+                    --idx;
+                } else if (peek() == '(') { // () - PUSH
+                    get(); // '('
+                    v[++idx] = Node{0};
+                } else if (in(peek(), r.type())) { // 单目运算符 - PUSH
+                    r.op = get();
+                    r.waiting = true;
+                    v[++idx] = Node{3};
+                }
+            } else {
+                if (r.waiting) { // 单目运算符 - POP
+                    res = op1(res, r.op);
+                } else { // () - POP
+                    get(); // ')'
+                }
+                --idx;
+            }
         } else {
             if (!r.init && !r.waiting) {
                 r.waiting = true;
-                v.push_back(Node{r.level + 1});
+                v[++idx] = Node{r.level + 1};
             } else {
                 if (!r.init) {
                     r.res = res;
@@ -106,10 +127,10 @@ int expression() {
 
                 if (in(peek(), r.type())) {
                     r.op = get();
-                    v.push_back(Node{r.level + 1});
+                    v[++idx] = Node{r.level + 1};
                 } else {
                     res = r.res;
-                    v.pop_back();
+                    --idx;
                 }
             }
         }
