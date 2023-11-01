@@ -2,6 +2,8 @@
 
 using namespace std;
 
+bool div0 = false;
+
 // --------- 辅助函数 --------- 
 
 bool in(char c, const char*s) { // 判断 c 是否在 s 中出现
@@ -12,8 +14,8 @@ bool in(char c, const char*s) { // 判断 c 是否在 s 中出现
 
 int ensureSafe(int x) { // 如果 x == 0 就结束程序
     if (x == 0) {
-        puts("Runtime Error");
-        exit(0);
+        div0 = true;
+        x = 1;
     }
     return x;
 }
@@ -53,14 +55,14 @@ char get() { // 获取当前表达式字符并右移一位
 
 // --------- 递归计算函数 --------- 
 
-int expression();
+int level4();
 
 int level1() { // 处理数字、括号和单目运算符。
     if (isdigit(peek()))
         return get() - '0'; // 可以修改这里，支持超过一位的数字
     else if (peek() == '(') {
         get(); // (
-        int res = expression();
+        int res = level4();
         get(); // )
         return res;
     } else if(in(peek(), "+-~")) {
@@ -91,10 +93,6 @@ int level4() { // 处理 > <
     return res;
 }
 
-int expression() {
-    return level4();
-}
-
 int main() {
     int T; cin >> T;
 
@@ -102,7 +100,10 @@ int main() {
         cin >> s;
         c = s;
 
-        cout << expression();
+        div0 = false;
+        int res = level4();
+        if (div0) cout << "Runtime Error\n";
+        else cout << res << endl;
     }
     return 0;
 }
