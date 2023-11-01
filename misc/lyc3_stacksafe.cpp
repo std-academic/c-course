@@ -53,24 +53,7 @@ inline char get() { // 获取当前表达式字符并右移一位
     return *c++;
 }
 
-// --------- 递归计算函数 --------- 
-
-int expression();
-
-int factor() { // 处理数字、括号和单目运算符。
-    if (isdigit(peek()))
-        return get() - '0'; // 可以修改这里，支持超过一位的数字
-    else if (peek() == '(') {
-        get(); // (
-        int res = expression();
-        get(); // )
-        return res;
-    } else if(in(peek(), "+-~")) {
-        char op = get();
-        return op1(factor(), op);
-    }
-    exit(1); // 出错
-}
+// --------- 计算函数 --------- 
 
 const char* level_op[] = {"<>", "+-", "*/%", "+-~"};
 struct Node {
