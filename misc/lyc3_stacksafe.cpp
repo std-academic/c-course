@@ -55,41 +55,65 @@ inline char get() { // 获取当前表达式字符并右移一位
 
 // --------- 递归计算函数 --------- 
 
-int level4();
+int expression();
 
-int level1() { // 处理数字、括号和单目运算符。
+int factor() { // 处理数字、括号和单目运算符。
     if (isdigit(peek()))
         return get() - '0'; // 可以修改这里，支持超过一位的数字
     else if (peek() == '(') {
         get(); // (
-        int res = level4();
+        int res = expression();
         get(); // )
         return res;
     } else if(in(peek(), "+-~")) {
         char op = get();
-        return op1(level1(), op);
+        return op1(factor(), op);
     }
     exit(1); // 出错
 }
 
-int level2() { // 处理 * / %
-    int res = level1();
-    while (in(peek(), "*/%"))
-        res = op2(res, level1(), get());
-    return res;
-}
+const char* level_op[] = {"<>", "+-", "*/%"};
+struct Node {
+    int level, res;
+    bool init, waiting;
+    char op;
+    Node() : level(0), res(0), init(0), waiting(0), op(' ') {}
+    Node(int level) : level(level), res(0), init(0), waiting(0), op(' ') {}
+    const char* type() const { return level_op[level]; }
+};
 
-int level3() { // 处理 + -
-    int res = level2();
-    while (in(peek(), "+-"))
-        res = op2(res, level2(), get());
-    return res;
-}
+int expression() {
+    vector<Node> v; // 模拟栈
+    v.push_back(Node{0});
 
-int level4() { // 处理 > <
-    int res = level3();
-    while (in(peek(), "><"))
-        res = op2(res, level3(), get());
+    int res;
+    while (!v.empty()) {
+        auto &r = *v.rbegin();
+        if (r.level == 3) {
+            res = factor();
+            v.pop_back();
+        } else {
+            if (!r.init && !r.waiting) {
+                r.waiting = true;
+                v.push_back(Node{r.level + 1});
+            } else {
+                if (!r.init) {
+                    r.res = res;
+                    r.init = true;
+                } else {
+                    r.res = op2(r.res, res, r.op);
+                }
+
+                if (in(peek(), r.type())) {
+                    r.op = get();
+                    v.push_back(Node{r.level + 1});
+                } else {
+                    res = r.res;
+                    v.pop_back();
+                }
+            }
+        }
+    }
     return res;
 }
 
@@ -101,7 +125,7 @@ int main() {
         c = s;
 
         div0 = false;
-        int res = level4();
+        int res = expression();
         if (div0) cout << "Runtime Error\n";
         else cout << res << endl;
     }
